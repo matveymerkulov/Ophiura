@@ -4,39 +4,57 @@ import {project, world} from "../Furca/src/project.js"
 import {ctx, currentCanvas, distToScreen, xToScreen, yToScreen} from "../Furca/src/canvas.js"
 import {defaultCanvas, mouse} from "../Furca/src/system.js"
 import {Key} from "../Furca/src/key.js"
-import {Pivot} from "../Furca/src/pivot.js"
 import {drawArrow, drawDashedRegion, drawShape} from "./draw.js"
-import {dist, rad} from "../Furca/src/functions.js"
 import MovePoint from "./move_point.js"
-import {Path, PathPart} from "./path.js"
+import {findControlPoint, Path, PathPart} from "./path.js"
+import {Point} from "../Furca/src/point.js"
+import {MoveControlPoint} from "./move_control_point.js"
 
 // settings
 
-const settings = {
-    pivot: {
+const blackOutline = {
+    type: "o",
+    color: "black",
+    size: 7,
+}
+
+export const settings = {
+    point: {
         type: "o",
         color: "white",
         size: 5,
         diameter: 7,
-        outline: {
-            type: "o",
-            color: "black",
-            size: 7,
-        },
+        outline: blackOutline,
+    },
+    currentPoint: {
+        type: "o",
+        color: "green",
+        size: 5,
+    },
+    cPoint: {
+        type: "o",
+        color: "lightblue",
+        size: 5,
+        diameter: 7,
+        outline: blackOutline,
+    },
+    cPointLine: {
+
     }
 }
 
 // keys
 
 export const primaryKey = new Key("LMB")
-export const newPivotKey = new Key("KeyP")
+export const newPointKey = new Key("KeyP")
 export const addToPathKey = new Key("KeyL")
 export const removeFromPathKey = new Key("Escape")
 export const endPathKey = new Key("KeyE")
 
 // init
 
-export let pivotUnderCursor, currentPath, currentPivot
+export let pointUnderCursor, currentPath, currentPoint, currentPathPart, controlPointIndex
+export let paths = [], points = []
 
 project.init = function() {
     defaultCanvas()
@@ -45,46 +63,61 @@ project.init = function() {
     //currentCanvas.add(new Pan(), panKey)
     //currentCanvas.add(new Zoom(zoomInKey, zoomOutKey))
     currentCanvas.add(new MovePoint(), primaryKey)
+    currentCanvas.add(new MoveControlPoint(), primaryKey)
+
+
+    const point0 = new Point(-2, -2)
+    const point1 = new Point(2, 2)
+    points.push(point0, point1)
+    const path0 = new Path()
+    path0.add(new PathPart(point0, point1))
+    paths.push(path0)
+
 
     project.update = function() {
         currentCanvas.updateNode()
 
-        pivotUnderCursor = undefined
-        for(let object of world.items) {
-            if(object instanceof Pivot) {
-                if(distToScreen(dist(object.x - mouse.x, object.y - mouse.y)) <= settings.pivot.diameter) {
-                    pivotUnderCursor = object
-                }
+        pointUnderCursor = undefined
+        for(let point of points) {
+            if(distToScreen(point.distanceTo(mouse)) <= settings.point.diameter) {
+                pointUnderCursor = point
             }
         }
 
-        if(newPivotKey.wasPressed) {
-            world.add(new Pivot(mouse.x, mouse.y))
+        findControlPoint(settings.cPoint.diameter)
+
+        if(newPointKey.wasPressed) {
+            points.push(new Point(mouse.x, mouse.y))
         }
 
-        if(addToPathKey.wasPressed && pivotUnderCursor) {
+        if(addToPathKey.wasPressed && pointUnderCursor) {
             if(currentPath === undefined) {
-                currentPivot = pivotUnderCursor
+                currentPoint = pointUnderCursor
                 currentPath = new Path()
-                world.add(currentPath)
+                paths.push(currentPath)
             } else {
-                currentPath.add(new PathPart(currentPivot, pivotUnderCursor))
-                currentPivot = pivotUnderCursor
+                currentPath.add(new PathPart(currentPoint, pointUnderCursor))
+                currentPoint = pointUnderCursor
             }
         }
     }
 
     currentCanvas.render = function() {
-        for(let object of world.items) {
-            object.draw()
-            if(object instanceof Pivot) {
-                const x = xToScreen(object.x)
-                const y = yToScreen(object.y)
-                drawShape(x, y, settings.pivot)
+        for(let path of paths) {
+            path.draw()
+        }
 
-                if(pivotUnderCursor === object) {
-                    drawDashedRegion(x - 6, y - 6, 12, 12, true)
-                }
+        for(let point of points) {
+            const x = xToScreen(point.x)
+            const y = yToScreen(point.y)
+            drawShape(x, y, settings.point)
+
+            if(point === currentPoint) {
+                drawShape(x, y, settings.currentPoint)
+            }
+
+            if(pointUnderCursor === point) {
+                drawDashedRegion(x - 6, y - 6, 12, 12, true)
             }
         }
     }
