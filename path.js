@@ -24,6 +24,28 @@ export class PathPart {
         this.cPoint1.setPosition(0.3 * (point0.x - point1.x), 0.3 * (point0.y - point1.y))
     }
 
+    getX(t0) {
+        const x0 = this.point0.x
+        const x3 = this.point1.x
+        const x1 = x0 + this.cPoint0.x
+        const x2 = x3 + this.cPoint1.x
+
+        const t1 = 1.0 - t0
+
+        return t1 * t1 * (t1 * x0 + 3.0 * t0 * x1) + t0 * t0 * (3.0 * t1 * x2 + t0 * x3)
+    }
+
+    getY(t0) {
+        const y0 = this.point0.y
+        const y3 = this.point1.y
+        const y1 = y0 + this.cPoint0.y
+        const y2 = y3 + this.cPoint1.y
+
+        const t1 = 1.0 - t0
+
+        return t1 * t1 * (t1 * y0 + 3.0 * t0 * y1) + t0 * t0 * (3.0 * t1 * y2 + t0 * y3)
+    }
+
     draw() {
         const x0 = xToScreen(this.point0.x)
         const y0 = yToScreen(this.point0.y)
@@ -49,6 +71,10 @@ export class PathPart {
 
         drawShape(cx0, cy0, settings.cPoint)
         drawShape(cx1, cy1, settings.cPoint)
+
+        for(let t = 0; t <= 1.0; t += 0.25) {
+            drawShape(xToScreen(this.getX(t)), yToScreen(this.getY(t)), settings.cPoint)
+        }
 
         if(pathPartUnderCursor !== this) return
 
