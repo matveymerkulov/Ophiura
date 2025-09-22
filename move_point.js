@@ -3,7 +3,7 @@
 import {canvasMouse} from "../Furca/src/system.js"
 import {distFromScreen} from "../Furca/src/canvas.js"
 import {Drag} from "../Furca/src/drag.js"
-import {objectUnderCursor} from "./main.js"
+import {pivotUnderCursor} from "./main.js"
 
 export default class MovePoint extends Drag {
     constructor(direction = 1) {
@@ -16,7 +16,7 @@ export default class MovePoint extends Drag {
     }
 
     getObject() {
-        return objectUnderCursor
+        return pivotUnderCursor
     }
 
     start() {

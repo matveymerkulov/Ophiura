@@ -7,6 +7,7 @@ export function drawShape(x, y, parameters, type) {
     }
 
     ctx.strokeStyle = parameters.color
+    ctx.fillStyle = parameters.color
     ctx.lineWidth = parameters.lineWidth
     const size = parameters.size
 

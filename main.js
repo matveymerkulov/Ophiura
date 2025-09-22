@@ -8,6 +8,7 @@ import {Pivot} from "../Furca/src/pivot.js"
 import {drawArrow, drawDashedRegion, drawShape} from "./draw.js"
 import {dist, rad} from "../Furca/src/functions.js"
 import MovePoint from "./move_point.js"
+import {Path, PathPart} from "./path.js"
 
 // settings
 
@@ -15,28 +16,27 @@ const settings = {
     pivot: {
         type: "o",
         color: "white",
-        size: 4,
+        size: 5,
         diameter: 7,
         outline: {
+            type: "o",
             color: "black",
             size: 7,
         },
-        arrow: {
-            lineWidth: 2,
-            pointerLength: 9,
-            angle: rad(150),
-        }
     }
 }
 
 // keys
 
+export const primaryKey = new Key("LMB")
 export const newPivotKey = new Key("KeyP")
-export const movePivotKey = new Key("LMB")
+export const addToPathKey = new Key("KeyL")
+export const removeFromPathKey = new Key("Escape")
+export const endPathKey = new Key("KeyE")
 
 // init
 
-export let objectUnderCursor
+export let pivotUnderCursor, currentPath, currentPivot
 
 project.init = function() {
     defaultCanvas()
@@ -44,22 +44,33 @@ project.init = function() {
     //currentCanvas.setZoom(-19)
     //currentCanvas.add(new Pan(), panKey)
     //currentCanvas.add(new Zoom(zoomInKey, zoomOutKey))
-    currentCanvas.add(new MovePoint(), movePivotKey)
+    currentCanvas.add(new MovePoint(), primaryKey)
 
     project.update = function() {
         currentCanvas.updateNode()
 
-        objectUnderCursor = undefined
+        pivotUnderCursor = undefined
         for(let object of world.items) {
             if(object instanceof Pivot) {
                 if(distToScreen(dist(object.x - mouse.x, object.y - mouse.y)) <= settings.pivot.diameter) {
-                    objectUnderCursor = object
+                    pivotUnderCursor = object
                 }
             }
         }
 
         if(newPivotKey.wasPressed) {
             world.add(new Pivot(mouse.x, mouse.y))
+        }
+
+        if(addToPathKey.wasPressed && pivotUnderCursor) {
+            if(currentPath === undefined) {
+                currentPivot = pivotUnderCursor
+                currentPath = new Path()
+                world.add(currentPath)
+            } else {
+                currentPath.add(new PathPart(currentPivot, pivotUnderCursor))
+                currentPivot = pivotUnderCursor
+            }
         }
     }
 
@@ -71,7 +82,7 @@ project.init = function() {
                 const y = yToScreen(object.y)
                 drawShape(x, y, settings.pivot)
 
-                if(objectUnderCursor === object) {
+                if(pivotUnderCursor === object) {
                     drawDashedRegion(x - 6, y - 6, 12, 12, true)
                 }
             }
